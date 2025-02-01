@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Resources:
+  CodeBuildProject:
+    Type: 'AWS::CodeBuild::Project'
+    Properties:
+      Name: LWiveb123
+      Description: CodeBuild project for LWiveb123
+      Source:
+        Type: GitHub
+        Location: git@github.com:Aiyaan-Mahajan/TheGrowthString_PromptOps.git
+        OAuthToken: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:github-token'
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:4.0
+        EnvironmentVariables:
+          - Name: TGSDOCKERPASSWORD
+            Type: PARAMETER_STORE
+            Value: tgsdockerpassword
+      Artifacts:
+        Type: S3
+        Location: !Sub 's3://${AWS::AccountId}-codebuild-artifacts'
+        Path: LWiveb123-artifacts
+      ServiceRole: !GetAtt 'CodeBuildServiceRole.Arn'
+      Tags:
+        - Key: Environment
+          Value: Dev
+
+  CodeBuildServiceRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: CodeBuildServiceRolePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketVersioning
+                  - ssm:GetParameter
+                Resource: '*'
+
+  SSMParameter:
+    Type: 'AWS::SSM::Parameter'
+    Properties:
+      Name: tgsdockerpassword
+      Type: SecureString
+      Value: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:github-token'
