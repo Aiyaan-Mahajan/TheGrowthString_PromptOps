@@ -1,0 +1,4 @@
+flask==2.0.2
+flask-sqlalchemy==2.5.1
+pytest==6.2.5
+pip freeze > requirements.txt
